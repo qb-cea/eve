@@ -17,6 +17,7 @@ import pymongo
 import simplejson as json
 from bson import ObjectId
 from bson.dbref import DBRef
+from collections import defaultdict
 from copy import copy
 from flask import abort, request, g
 from .flask_pymongo import PyMongo
@@ -542,8 +543,14 @@ class Mongo(DataLayer):
         .. versionchanged:: 0.0.4
            retrieves the target collection via the new config.SOURCES helper.
         """
+        _updates = defaultdict(dict)
+        for key, value in updates.items():
+            if not key.startswith("$"):
+                _updates["$set"][key] = value
+            else:
+                _updates[key] = value
 
-        return self._change_request(resource, id_, {"$set": updates}, original)
+        return self._change_request(resource, id_, _updates, original)
 
     def replace(self, resource, id_, document, original):
         """ Replaces an existing document.

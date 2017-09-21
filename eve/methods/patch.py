@@ -158,9 +158,18 @@ def patch_internal(resource, payload=None, concurrency_check=False,
         if skip_validation:
             validation = True
         else:
-            validation = validator.validate_update(updates, object_id,
+            # TODO: remove this part once the "old" format is abandonned
+            _updates = updates.copy()
+            for key, value in _updates.pop("$set", {}):
+                _updates[key] = value
+
+            for key in updates:
+                if key.startswith("$") and key != "$set":
+                    _updates.pop(key)
+
+            validation = validator.validate_update(_updates, object_id,
                                                    original)
-            updates = validator.document
+            updates.update(validator.document)
 
         if validation:
             # Apply coerced values
